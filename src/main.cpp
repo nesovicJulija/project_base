@@ -82,7 +82,7 @@ int main() {
     // shader() -> konstruktor
     Shader shader("resources/shaders/helicopter.vs", "resources/shaders/helicopter.fs");
 
-    Model ourModel("resources/objects/airplane/Bell206.obj");
+    Model ourModel("resources/objects/backpack/Bell206.obj");
 
     while(!glfwWindowShouldClose(window)){
 
