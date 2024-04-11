@@ -77,9 +77,11 @@ int main() {
     Shader shader("resources/shaders/helicopter.vs", "resources/shaders/helicopter.fs");
     Shader shader1("resources/shaders/helipad.vs", "resources/shaders/helipad.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+    Shader shaderCrow("resources/shaders/birds.vs", "resources/shaders/birds.fs");
     
     Model ourModel("resources/objects/backpack/Bell206.obj");
-    Model ourModel1("resources/objects/helipad/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
+    Model ourModel1("resources/objects/backpack/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
+    Model ourModel2("resources/objects/backpack/AmericanCrow.obj");
 
     float skyboxVertices[] = { // vrednosti su uvek [-1,1] i ovako definisana kocka obuhvata ceo clip space
             // positions
@@ -213,6 +215,34 @@ int main() {
         shader1.setMat4("model", model);
 
         ourModel1.Draw(shader1);
+
+        shaderCrow.use();
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        shaderCrow.setMat4("projection", projection);
+
+        // mozemo po jednacini kruga da pomeramo
+        float radius = 40; // koliko zelimo da budemo udaljeni od koord pocetka
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+
+        view = glm::lookAt(glm::vec3(2,2,-5), glm::vec3(camX,0,camZ), glm::vec3(4,4,4)); // vektor na gore je bas y!
+
+        shaderCrow.setMat4("view", view);
+
+        for(int i = 0; i < 3; i++) {
+
+             float angle = 1.0+i;
+            glm::mat4 model = glm::mat4(1.0f);
+
+            model = glm::translate(model, glm::vec3(0.0, 0.0, -2.0 * 2*i));
+            model = glm::translate(model, glm::vec3(5 * cos(time), -2.0 * i, 5 * sin(time)));
+
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(10.0, 20.0, 8.0));
+            model = glm::scale(model, glm::vec3(2.5f, 2.5f, 2.5f));
+
+            shaderCrow.setMat4("model", model);
+            ourModel2.Draw(shaderCrow);
+        }
         
         //update(window);
         glfwSwapBuffers(window); //render();
