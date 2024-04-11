@@ -72,17 +72,107 @@ int main() {
 
     // treba ovde da testiramo dubinu
     glEnable(GL_DEPTH_TEST);
+    // zbog blendinga
+    glEnable(GL_BLEND);
+    // nakon toga postavljamo blending fju
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // shader() -> konstruktor
     Shader shader("resources/shaders/helicopter.vs", "resources/shaders/helicopter.fs");
     Shader shader1("resources/shaders/helipad.vs", "resources/shaders/helipad.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader shaderCrow("resources/shaders/birds.vs", "resources/shaders/birds.fs");
+    Shader blendingShader("resources/shaders/clouds.vs", "resources/shaders/clouds.fs");
     
     Model ourModel("resources/objects/backpack/Bell206.obj");
     Model ourModel1("resources/objects/backpack/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
     Model ourModel2("resources/objects/backpack/AmericanCrow.obj");
 
+    float cubeVertices[] = {
+            // positions          // texture Coords
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
+    float transparentVertices[] = {
+            // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+            0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+            1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+            1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    // cube VAO
+    unsigned int cubeVAO, cubeVBO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &cubeVBO);
+    glBindVertexArray(cubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    // transparent VAO
+    unsigned int transparentVAO, transparentVBO;
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+    // load textures
+    // -------------
+    unsigned int cubeTexture = loadTexture(FileSystem::getPath("resources/textures/marble.jpg").c_str());
+    unsigned int transparentTexture = loadTexture(FileSystem::getPath("resources/textures/Cloud.png").c_str());
+    
     float skyboxVertices[] = { // vrednosti su uvek [-1,1] i ovako definisana kocka obuhvata ceo clip space
             // positions
             -1.0f,  1.0f, -1.0f,
@@ -148,6 +238,19 @@ int main() {
                     FileSystem::getPath("resources/textures/front.jpg"),
                     FileSystem::getPath("resources/textures/back.jpg")
             };
+
+    vector<glm::vec3> clouds
+            {
+                    //glm::vec3(-1.5f, 0.0f, -0.48f),
+                    //glm::vec3( 1.5f, 0.0f, 0.51f),
+                    //glm::vec3( 0.0f, 0.0f, 0.7f),
+                    //glm::vec3(-0.3f, 0.0f, -2.3f),
+                    glm::vec3 (0.5f, 0.0f, -0.6f)
+            };
+
+    blendingShader.use();
+    blendingShader.setInt("texture1", 0);
+        
     unsigned int cubemapTexture = loadCubemap(faces);
 
     skyboxShader.use();
@@ -162,6 +265,14 @@ int main() {
         lastFrame = currentFrame;
 
         proccessInput(window);
+
+        // moramo da sortiramo pozicije transparentnih objekata koje hocemo da nacrtamo
+        std::map<float, glm::vec3> sorted;
+        for (unsigned int i = 0; i < clouds.size(); i++)
+        {
+            float distance = glm::length(camera.Position - clouds[i]);
+            sorted[distance] = clouds[i];
+        }
 
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -231,7 +342,7 @@ int main() {
 
         for(int i = 0; i < 3; i++) {
 
-             float angle = 1.0+i;
+            float angle = 1.0+i;
             glm::mat4 model = glm::mat4(1.0f);
 
             model = glm::translate(model, glm::vec3(0.0, 0.0, -2.0 * 2*i));
@@ -242,6 +353,38 @@ int main() {
 
             shaderCrow.setMat4("model", model);
             ourModel2.Draw(shaderCrow);
+        }
+        
+        blendingShader.use();
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        model = glm::mat4(1.0f);
+
+        blendingShader.setMat4("projection", projection);
+        blendingShader.setMat4("view", view);
+        // cubes
+        glBindVertexArray(cubeVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, cubeTexture);
+        model = glm::translate(model, glm::vec3(2.0f, 2.0f, 2.0f));
+
+        blendingShader.setMat4("model", model);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+        blendingShader.setMat4("model", model);
+
+        // clouds
+        glBindVertexArray(transparentVAO);
+        glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, it->second);
+            model = glm::translate(model, glm::vec3(0,4,0));
+            model = glm::scale(model, glm::vec3(-9,7,4));
+            blendingShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         
         //update(window);
@@ -373,14 +516,6 @@ void frameBufferSizeCallback(GLFWwindow *window, int width, int height){
     //glViewport(0,0,800,600);
     glViewport(0,0,width, height);
 }
-// loads a cubemap texture from 6 individual texture faces
-// order:
-// +X (right)
-// -X (left)
-// +Y (top)
-// -Y (bottom)
-// +Z (front)
-// -Z (back)
 // -------------------------------------------------------
 unsigned int loadCubemap(std::vector<std::string> faces){
     // fja za ucitavanje Cubemape
