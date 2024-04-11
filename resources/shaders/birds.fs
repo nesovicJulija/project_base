@@ -1,0 +1,25 @@
+#version 330 core
+
+out vec4 FragColor;
+
+in vec2 TexCoords;
+
+uniform sampler2D texture_diffuse1; // koristimo za teksture prefiks texture_tipTekstureRedniBroj
+//uniform sampler2D texture_diffuse2;
+//uniform sampler2D texture_diffuse3;
+
+uniform sampler2D texture_specular1;
+//uniform sampler2D texture_specular2;
+uniform sampler2D texture_normal1;
+uniform sampler2D texture_height1;
+
+void main(){
+
+    vec4 texColor = texture(texture_diffuse1, TexCoords);
+    //FragColor = texture(texture_diffuse1, TexCoords);
+
+    if(texColor.a < 0.4)
+        discard;
+
+    FragColor = texColor;
+}
