@@ -81,9 +81,11 @@ int main() {
 
     // shader() -> konstruktor
     Shader shader("resources/shaders/helicopter.vs", "resources/shaders/helicopter.fs");
-
+    Shader shader1("resources/shaders/helipad.vs", "resources/shaders/helipad.fs");
+    
     Model ourModel("resources/objects/backpack/Bell206.obj");
-
+    Model ourModel1("resources/objects/helipad/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
+    
     while(!glfwWindowShouldClose(window)){
 
         /*kada frame rate nije zakljucan moramo raditi koliko je vremena proteklo
@@ -103,8 +105,6 @@ int main() {
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         shader.setMat4("projection", projection);
 
-        //glm::mat4 view = glm::mat4(1.0f);
-        /* cameraFront nije smer gledanja vec je tacka u prostoru(moramo i nju da pomerimo) */
         //view = glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);
         glm::mat4 view = camera.GetViewMatrix(); // za trenutno stanje kamere vraca view matricu
         shader.setMat4("view", view);
@@ -122,6 +122,19 @@ int main() {
         // hocemo da nacrtamo model sa sejderom shader
         ourModel.Draw(shader);
 
+        // model heliodroma
+        shader1.use();
+        shader1.setMat4("projection", projection);
+        shader1.setMat4("view", view);
+
+        model = glm::mat4(1);
+        model = glm::translate(model, glm::vec3(5.0f, -20.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0, 0.0,10.0));
+        model = glm::scale(model, glm::vec3(55.0f, 55.0f, 55.0f));
+        shader1.setMat4("model", model);
+
+        ourModel1.Draw(shader1);
+        
         //update(window);
         glfwSwapBuffers(window); //render();
         glfwPollEvents();
