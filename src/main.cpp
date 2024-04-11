@@ -1,11 +1,10 @@
 #include <iostream>
-#include<glad/glad.h> /* glad obavezno ukljuciti pre glfw!!! */
+#include<glad/glad.h> /* glad obavezno ukljuciti pre glfw */
 #include<GLFW/glfw3.h>
 #include<cmath>
 #include <learnopengl/shader.h>
 #include<stb_image.h>
 
-//#include<rg/Shader.h>
 // OpenGL-ove biblioteke za matematiku
 #include <glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
@@ -30,11 +29,8 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 bool firstMouse = true;
-//float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
-//float pitch =  0.0f;
 float lastX =  SCR_WIDTH / 2.0; // na pocetku je kursor na sredini ekrana
 float lastY =  SCR_HEIGHT / 2.0; // na pocetku je kursor na sredini ekrana
-//float fov   =  45.0f;
 
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
@@ -44,8 +40,6 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 Camera camera(glm::vec3(0.0f, 0.0f, 40.0f));
 
 int main() {
-    //std::cout << "Hello, World!" << std::endl;
-    /*pravimo nov prozor i registrujemo dogadjaje*/
     // inicijalizacija glfw
     glfwInit();
     // OpenGL Core 3.3
@@ -82,9 +76,80 @@ int main() {
     // shader() -> konstruktor
     Shader shader("resources/shaders/helicopter.vs", "resources/shaders/helicopter.fs");
     Shader shader1("resources/shaders/helipad.vs", "resources/shaders/helipad.fs");
+    Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     
     Model ourModel("resources/objects/backpack/Bell206.obj");
     Model ourModel1("resources/objects/helipad/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
+
+    float skyboxVertices[] = { // vrednosti su uvek [-1,1] i ovako definisana kocka obuhvata ceo clip space
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+
+    // skybox VAO
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    // ovaj niz od 6 tekstura su teksture za strane kocke(moraju bas u ovom redosledu da budu navedene)
+    vector<std::string> faces
+            {
+                    FileSystem::getPath("resources/textures/right.jpg"),
+                    FileSystem::getPath("resources/textures/left.jpg"),
+                    FileSystem::getPath("resources/textures/top.jpg"),
+                    FileSystem::getPath("resources/textures/bottom.jpg"),
+                    FileSystem::getPath("resources/textures/front.jpg"),
+                    FileSystem::getPath("resources/textures/back.jpg")
+            };
+    unsigned int cubemapTexture = loadCubemap(faces);
+
+    skyboxShader.use();
+    skyboxShader.setInt("skybox", 0);
     
     while(!glfwWindowShouldClose(window)){
 
@@ -98,8 +163,22 @@ int main() {
 
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // postoji i bit za dubinu
 
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+        glDepthMask(GL_FALSE);
+        skyboxShader.use();
+        // zelimo da iz matrice pogleda(view) eliminisemo translaciju, kako bi samo rotacija uticala
+        // na prikaz skyboxa(da kocka uvek izgleda beskonacno daleko)
+        skyboxShader.setMat4("view", glm::mat4(glm::mat3 (view)));
+        skyboxShader.setMat4("projection", projection);
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDepthMask(GL_TRUE); // ponovo ukljucujemo testiranje dubine(jer skybox treba da bude iza svega)
+        
         shader.use();
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
