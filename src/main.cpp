@@ -1,348 +1,298 @@
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <learnopengl/filesystem.h>
-#include <learnopengl/shader.h>
-#include <learnopengl/camera.h>
-#include <learnopengl/model.h>
-
 #include <iostream>
+#include<glad/glad.h> /* glad obavezno ukljuciti pre glfw!!! */
+#include<GLFW/glfw3.h>
+#include<cmath>
+#include <learnopengl/shader.h>
+#include<stb_image.h>
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+//#include<rg/Shader.h>
+// OpenGL-ove biblioteke za matematiku
+#include <glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+#include<learnopengl/camera.h>
+#include <learnopengl/filesystem.h>
+#include<learnopengl/model.h>
+#include<learnopengl/mesh.h>
+#include<rg/Error.h>
 
+void frameBufferSizeCallback(GLFWwindow *window, int width, int height);
+void update(GLFWwindow *window);
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+void proccessInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-
-void processInput(GLFWwindow *window);
-
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+unsigned int loadTexture(char const *path);
+unsigned int loadCubemap(std::vector<std::string> faces);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-// camera
-
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+//float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+//float pitch =  0.0f;
+float lastX =  SCR_WIDTH / 2.0; // na pocetku je kursor na sredini ekrana
+float lastY =  SCR_HEIGHT / 2.0; // na pocetku je kursor na sredini ekrana
+//float fov   =  45.0f;
 
-// timing
-float deltaTime = 0.0f;
+float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
-struct PointLight {
-    glm::vec3 position;
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
-    float constant;
-    float linear;
-    float quadratic;
-};
-
-struct ProgramState {
-    glm::vec3 clearColor = glm::vec3(0);
-    bool ImGuiEnabled = false;
-    Camera camera;
-    bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
-    float backpackScale = 1.0f;
-    PointLight pointLight;
-    ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
-
-    void SaveToFile(std::string filename);
-
-    void LoadFromFile(std::string filename);
-};
-
-void ProgramState::SaveToFile(std::string filename) {
-    std::ofstream out(filename);
-    out << clearColor.r << '\n'
-        << clearColor.g << '\n'
-        << clearColor.b << '\n'
-        << ImGuiEnabled << '\n'
-        << camera.Position.x << '\n'
-        << camera.Position.y << '\n'
-        << camera.Position.z << '\n'
-        << camera.Front.x << '\n'
-        << camera.Front.y << '\n'
-        << camera.Front.z << '\n';
-}
-
-void ProgramState::LoadFromFile(std::string filename) {
-    std::ifstream in(filename);
-    if (in) {
-        in >> clearColor.r
-           >> clearColor.g
-           >> clearColor.b
-           >> ImGuiEnabled
-           >> camera.Position.x
-           >> camera.Position.y
-           >> camera.Position.z
-           >> camera.Front.x
-           >> camera.Front.y
-           >> camera.Front.z;
-    }
-}
-
-ProgramState *programState;
-
-void DrawImGui(ProgramState *programState);
+Camera camera(glm::vec3(0.0f, 0.0f, 40.0f));
 
 int main() {
-    // glfw: initialize and configure
-    // ------------------------------
+    //std::cout << "Hello, World!" << std::endl;
+    /*pravimo nov prozor i registrujemo dogadjaje*/
+    // inicijalizacija glfw
     glfwInit();
+    // OpenGL Core 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    // glfw window creation
-    // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL) {
-        std::cout << "Failed to create GLFW window" << std::endl;
+    // kreiramo prozora
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "project", nullptr, nullptr);
+    if(window == nullptr){
+        // nije uspesno kreiran
+        std::cout << "Failed to create window!\n";
         glfwTerminate();
-        return -1;
+        return EXIT_FAILURE;
     }
+    // opengl-u zelimo da kazemo da crta u prozoru
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback); // sta se desi kada resize-ujemo prozor
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-    glfwSetKeyCallback(window, key_callback);
-    // tell GLFW to capture our mouse
+
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
+    // glad biblioteka ucitava sve svoje fje
+    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){
+        std::cout << "Failed to init GLAD\n";
+        glfwTerminate();
+        return EXIT_FAILURE;
     }
 
-    // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
-
-    programState = new ProgramState;
-    programState->LoadFromFile("resources/program_state.txt");
-    if (programState->ImGuiEnabled) {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-    // Init Imgui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
-
-
-
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330 core");
-
-    // configure global opengl state
-    // -----------------------------
+    // treba ovde da testiramo dubinu
     glEnable(GL_DEPTH_TEST);
 
-    // build and compile shaders
-    // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    // shader() -> konstruktor
+    Shader shader("resources/shaders/helicopter.vs", "resources/shaders/helicopter.fs");
 
-    // load models
-    // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+    Model ourModel("resources/objects/airplane/Bell206.obj");
 
-    PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
+    while(!glfwWindowShouldClose(window)){
 
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
-
-
-
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    // render loop
-    // -----------
-    while (!glfwWindowShouldClose(window)) {
-        // per-frame time logic
-        // --------------------
+        /*kada frame rate nije zakljucan moramo raditi koliko je vremena proteklo
+         * od kada se petlja renderovanja zavrsila do trenutnog vremena*/
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // input
-        // -----
-        processInput(window);
+        proccessInput(window);
 
-
-        // render
-        // ------
-        glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // postoji i bit za dubinu
 
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
-                                                (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = programState->camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
+        shader.use();
 
-        // render the loaded model
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        shader.setMat4("projection", projection);
+
+        //glm::mat4 view = glm::mat4(1.0f);
+        /* cameraFront nije smer gledanja vec je tacka u prostoru(moramo i nju da pomerimo) */
+        //view = glm::lookAt(cameraPos, cameraFront + cameraPos, cameraUp);
+        glm::mat4 view = camera.GetViewMatrix(); // za trenutno stanje kamere vraca view matricu
+        shader.setMat4("view", view);
+
+        float time = glfwGetTime();
+
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        //model = glm::translate(model, glm::vec3(-1.5f, -25.35f, 7.0f)); // ovako stoji tacno na zemlji
 
-        if (programState->ImGuiEnabled)
-            DrawImGui(programState);
+        model = glm::translate(model, glm::vec3(-1.5f, -24.0f, 7.0f));
+        model = glm::translate(model, glm::vec3(0,sin((glfwGetTime()*2) / 2.0+0.5),0));
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        shader.setMat4("model", model);
 
+        // hocemo da nacrtamo model sa sejderom shader
+        ourModel.Draw(shader);
 
-
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);
+        //update(window);
+        glfwSwapBuffers(window); //render();
         glfwPollEvents();
     }
 
-    programState->SaveToFile("resources/program_state.txt");
-    delete programState;
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+void proccessInput(GLFWwindow *window){
+    // obradjuje ulaz
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, true);
+    }
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+    // brzinu skaliramo sa deltaTime da bi bilo ravnomernije
+    const float cameraSpeed = 2.5*deltaTime; // brzina kojom se kamera pomera
+    // definisemo promene ulaza td se pomeramo na w,a,s,d
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+        /* pomeramo se u desno pa uzimamo vektorski proizvod
+         * uvek treba da normalizujemo vektore*/
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    }
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-}
-
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
-void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-    if (firstMouse) {
+void mouse_callback(GLFWwindow *window, double xpos, double ypos){
+    /*moramo ponovo da izracunamo vektore x i y*/
+    if(firstMouse){
         lastX = xpos;
         lastY = ypos;
-        firstMouse = false;
+        firstMouse = false; // mis je pomeren
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float yoffset = lastY - ypos; /*obrnuto je jer nama koordinate po ekranu idu drugacije*/
 
     lastX = xpos;
     lastY = ypos;
 
-    if (programState->CameraMouseMovementUpdateEnabled)
-        programState->camera.ProcessMouseMovement(xoffset, yoffset);
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    programState->camera.ProcessMouseScroll(yoffset);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset){
+
+    /* kada gledamo za koliko je skrolovano posmatramo yoffset */
+    camera.ProcessMouseScroll(yoffset);
 }
 
-void DrawImGui(ProgramState *programState) {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-
-    {
-        static float f = 0.0f;
-        ImGui::Begin("Hello window");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
-        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
-
-        ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
-        ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
-        ImGui::End();
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods){
+    // da se prozor zatvori pritiskom na escape
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+        glfwSetWindowShouldClose(window, true);
+    }
+    // R na crveno, G na zelenu, B na plavu
+    if(key == GLFW_KEY_R && action == GLFW_PRESS){
+        glClearColor(1.0, 0.0, 0.0, 1.0);
     }
 
-    {
-        ImGui::Begin("Camera info");
-        const Camera& c = programState->camera;
-        ImGui::Text("Camera position: (%f, %f, %f)", c.Position.x, c.Position.y, c.Position.z);
-        ImGui::Text("(Yaw, Pitch): (%f, %f)", c.Yaw, c.Pitch);
-        ImGui::Text("Camera front: (%f, %f, %f)", c.Front.x, c.Front.y, c.Front.z);
-        ImGui::Checkbox("Camera mouse update", &programState->CameraMouseMovementUpdateEnabled);
-        ImGui::End();
+    if(key == GLFW_KEY_G && action == GLFW_PRESS){
+        glClearColor(0.0, 1.0, 0.0, 1.0);
     }
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if(key == GLFW_KEY_B && action == GLFW_PRESS){
+        glClearColor(0.0, 0.0, 1.0, 1.0);
+    }
+
 }
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-        programState->ImGuiEnabled = !programState->ImGuiEnabled;
-        if (programState->ImGuiEnabled) {
-            programState->CameraMouseMovementUpdateEnabled = false;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        } else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+unsigned int loadTexture(char const *path){
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+
+    if(data){
+        GLenum format;
+
+        if(nrComponents == 1)
+            format = GL_RED;
+
+        else if(nrComponents == 3)
+            format = GL_RGB;
+
+        else if(nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+
+    else{
+        std::cout << "Texture failed to load path : " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+
+void update(GLFWwindow *window){
+
+}
+
+void frameBufferSizeCallback(GLFWwindow *window, int width, int height){
+    // dimenzije unutar prozora za renderovanje, posto se velicina prozora moze menjati necemo ga pozvati
+    // iz main-a
+    //glViewport(0,0,800,600);
+    glViewport(0,0,width, height);
+}
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front)
+// -Z (back)
+// -------------------------------------------------------
+unsigned int loadCubemap(std::vector<std::string> faces){
+    // fja za ucitavanje Cubemape
+    /*Cubemap je tekstura objekat kao i svaki drugi i pravi se na analogan nacin*/
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    // ne aktiviramo ga kao 2D teksturu
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    unsigned char* data;
+
+    for(int i = 0; i < faces.size(); i++){
+        // za svaku pozivamo stbi load
+        data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+
+        if(data){
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0,
+                         GL_RGB, GL_UNSIGNED_BYTE, data);
+        }else{
+            ASSERT(false, "Failed to load cube map texture face");
+            return -1;
         }
+        stbi_image_free(data);
     }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); // r odgovara z koordinati
+    // stavljamo clamp to edge da bi OpenGL vratio granice teksture
+
+    return textureID;
+
 }
