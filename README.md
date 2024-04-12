@@ -11,9 +11,9 @@ Prazan projekat sa pratećim bibliotekama koje koristimo na času.
 7. ALT+SHIFT+F10 -> project_base -> run
 
 # Opis projekta
-Kretanje kamere uz pomoc dugmica W, S, A, D
-Mouse scroll uvelicava sliku
-Kako bi se video efekat Blendinga i Face Culling-a potrebno je okrenuti kameru u suprotnom smeru
+Kretanje kamere uz pomoc dugmica W, S, A, D.
+Mouse scroll uvelicava sliku.
+Kako bi se video efekat Blendinga i Face Culling-a potrebno je okrenuti kameru u suprotnom smeru.
 # Lekcije
 Lekcije koje su implementirane:
 1. Sve obavezne [1-7], ukljucujuci Blending, Face Culling i Advanced Lighting
