@@ -165,7 +165,6 @@ int main() {
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader shaderCrow("resources/shaders/birds.vs", "resources/shaders/birds.fs");
     Shader blendingShader("resources/shaders/clouds.vs", "resources/shaders/clouds.fs");
-    Shader advancedLightShader("resources/shaders/advancedLighting.vs", "resources/shaders/advancedLighting.fs");
     Shader ourShader("resources/shaders/model_lighting.vs", "resources/shaders/model_lighting.fs");
 
     Model ourModel("resources/objects/backpack/Bell206.obj");
