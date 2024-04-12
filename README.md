@@ -17,10 +17,10 @@ Lekcije koje su implementirane:
 1. Sve obavezne [1-7], ukljucujuci Blending, Face Culling i Advanced Lighting
 2. Lekcija iz grupe A : Cubemaps
 # Resursi
-Linkovi sa kojih su preuzeti modeli i teksture : 1. https://grabcad.com/library/software/wavefront-obj
-                                                 2. https://free3d.com/3d-models/obj
-                                                 3. https://www.cadnav.com/3d-models/sort-17.html
-                                                 4. https://www.freepik.com/
+Linkovi sa kojih su preuzeti modeli i teksture : https://grabcad.com/library/software/wavefront-obj
+                                                 https://free3d.com/3d-models/obj
+                                                 https://www.cadnav.com/3d-models/sort-17.html
+                                                 https://www.freepik.com/
                                                 
 
  
