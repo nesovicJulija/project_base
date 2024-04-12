@@ -16,6 +16,7 @@ Mouse scroll uvelicava sliku
 Lekcije koje su implementirane:
 1. Sve obavezne [1-7], ukljucujuci Blending, Face Culling i Advanced Lighting
 2. Lekcija iz grupe A : Cubemaps
+Kako bi se video efekat Blendinga i Face Culling-a potrebno je okrenuti kameru u suprotnom smeru
 # Resursi
 Linkovi sa kojih su preuzeti modeli i teksture : https://grabcad.com/library/software/wavefront-obj
                                                  https://free3d.com/3d-models/obj
