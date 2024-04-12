@@ -168,11 +168,11 @@ int main() {
     Shader advancedLightShader("resources/shaders/advancedLighting.vs", "resources/shaders/advancedLighting.fs");
     Shader ourShader("resources/shaders/model_lighting.vs", "resources/shaders/model_lighting.fs");
 
-    Model ourModel("resources/objects/airplane/Bell206.obj");
+    Model ourModel("resources/objects/backpack/Bell206.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
-    Model ourModel1("resources/objects/helipad/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
+    Model ourModel1("resources/objects/backpack/E6E4LR2BDR7I3VZPO4A4WJLKX.obj");
     ourModel1.SetShaderTextureNamePrefix("material.");
-    Model ourModel2("resources/objects/eagle/AmericanCrow.obj");
+    Model ourModel2("resources/objects/backpack/AmericanCrow.obj");
     ourModel2.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
