@@ -347,9 +347,6 @@ int main() {
     blendingShader.use();
     blendingShader.setInt("texture1", 0);
 
-    advancedLightShader.use();
-    advancedLightShader.setInt("texture2", 0);
-
     glm::vec3 lightPos(0, 0, 0);
 
     unsigned int cubemapTexture = loadCubemap(faces);
