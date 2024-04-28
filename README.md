@@ -23,6 +23,7 @@ Linkovi sa kojih su preuzeti modeli i teksture : https://grabcad.com/library/sof
                                                  https://free3d.com/3d-models/obj
                                                  https://www.cadnav.com/3d-models/sort-17.html
                                                  https://www.freepik.com/
-                                                
+# Google drive
+Link ka google drive-u na kome se nalaze teksture za model heliodroma : https://drive.google.com/drive/folders/1vgoxVJb4KMQwykIbj1FDRigP0-JbLRW7
 
  
