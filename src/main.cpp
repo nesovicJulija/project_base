@@ -327,12 +327,12 @@ int main() {
     // ovaj niz od 6 tekstura su teksture za strane kocke(moraju bas u ovom redosledu da budu navedene!)
     vector<std::string> faces
             {
-                    FileSystem::getPath("resources/textures/right.jpg"),
-                    FileSystem::getPath("resources/textures/left.jpg"),
-                    FileSystem::getPath("resources/textures/top.jpg"),
-                    FileSystem::getPath("resources/textures/bottom.jpg"),
-                    FileSystem::getPath("resources/textures/front.jpg"),
-                    FileSystem::getPath("resources/textures/back.jpg")
+                    FileSystem::getPath("resources/textures/ocean_right.png"),
+                    FileSystem::getPath("resources/textures/ocean_left.png"),
+                    FileSystem::getPath("resources/textures/ocean_up.png"),
+                    FileSystem::getPath("resources/textures/ocean_down.png"),
+                    FileSystem::getPath("resources/textures/ocean_front.png"),
+                    FileSystem::getPath("resources/textures/ocean_back.png")
             };
 
     vector<glm::vec3> clouds
@@ -381,8 +381,6 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // postoji i bit za dubinu
 
-        /*OVO JE ZA SKYBOX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-
         glm::mat4 view = programState->camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
@@ -398,7 +396,6 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glDepthMask(GL_TRUE); // ponovo ukljucujemo testiranje dubine(jer skybox treba da bude iza svega)
 
-        /* OVO VRATI ZA MODEL (ODAVDE)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
         ourShader.use();
 
         //Directional Lignt
